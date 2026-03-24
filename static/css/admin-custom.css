@@ -1,0 +1,41 @@
+/* ===== تخصيص لوغو صفحة تسجيل الدخول ===== */
+
+/* اللوغو في صفحة الدخول */
+.login-logo img,
+.login-box .login-logo img {
+    width: 360px !important;
+    height: 360px !important;
+    max-width: 360px !important;
+    max-height: 360px !important;
+    object-fit: contain;
+}
+
+/* توسيع حاوية اللوغو */
+.login-logo,
+.login-box .login-logo {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.login-logo a {
+    display: inline-block;
+}
+
+/* ===== إبقاء الاتجاه LTR مع ترجمة عربية ===== */
+body,
+.main-sidebar,
+.content-wrapper,
+.main-header,
+.main-footer {
+    direction: ltr !important;
+    text-align: left !important;
+}
+
+.jazzmin-version {
+    display: none !important;
+}
+
+
+#recent-actions-module {
+    display: none !important;
+}

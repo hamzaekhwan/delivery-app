@@ -1,0 +1,41 @@
+dashboard.superdriverapp.com {
+    tls {
+        issuer acme {
+            dir https://acme.zerossl.com/v2/DV90
+            eab A9FBvJ1B8wCcIiwYDTb_eQ UN1kuqcWGVt7Ad7wFNzyIMDT1StbFeE9Q1QVEIrBiV8H6MuhWnHzoq6zPtet0PzSUwCo36T7yBWYt-Y6QSxt4Q
+        }
+    }
+    # Flower Dashboard
+    # handle /flower* {
+    #     reverse_proxy flower:5555
+    # }
+
+    # Add these headers to all requests
+    header {
+        X-Forwarded-Proto https
+    }
+
+    # Static files - with path stripping
+    handle_path /static/* {
+        root * /app/staticfiles
+        file_server
+    }
+
+    # Media files - with path stripping
+    handle_path /media/* {
+        root * /app/media
+        file_server
+    }
+
+    # WebSocket
+    # handle /ws/* {
+    #     reverse_proxy web:8000
+    # }
+
+    # Django API
+    reverse_proxy web:8000 {
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Real-IP {remote_host}
+        flush_interval -1
+    }
+}

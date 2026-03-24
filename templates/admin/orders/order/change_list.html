@@ -1,0 +1,311 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<style>
+    /* ── Compact sidebar filters ── */
+    #changelist-filter {
+        font-size: 12px !important;
+        width: 185px !important;
+    }
+
+    #changelist-filter h3 {
+        font-size: 12px !important;
+        margin: 5px 0 3px !important;
+    }
+
+    #changelist-filter li {
+        padding: 2px 0 !important;
+        font-size: 11px !important;
+    }
+
+    #changelist-filter ul {
+        margin: 0 0 8px !important;
+        padding: 0 8px !important;
+    }
+
+    /* ── Compact table ── */
+    #result_list table th,
+    #result_list table td {
+        padding: 6px 8px !important;
+        font-size: 12px !important;
+    }
+
+    /* ── Stats dashboard ── */
+    .stats-dashboard {
+        direction: rtl;
+        margin-bottom: 16px;
+        font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    }
+
+    .stats-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: #78909c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    /* ── Cards row ── */
+    .stats-cards {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        flex: 1;
+        min-width: 140px;
+        max-width: 220px;
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 4px;
+        height: 100%;
+        border-radius: 0 8px 8px 0;
+    }
+
+    /* الألوان */
+    .card-blue {
+        background: #e3f2fd;
+    }
+
+    .card-blue::before {
+        background: #1565c0;
+    }
+
+    .card-orange {
+        background: #fff3e0;
+    }
+
+    .card-orange::before {
+        background: #e65100;
+    }
+
+    .card-green {
+        background: #e8f5e9;
+    }
+
+    .card-green::before {
+        background: #2e7d32;
+    }
+
+    .card-teal {
+        background: #e0f2f1;
+    }
+
+    .card-teal::before {
+        background: #00695c;
+    }
+
+    .card-red {
+        background: #fce4ec;
+    }
+
+    .card-red::before {
+        background: #c62828;
+    }
+
+    .card-purple {
+        background: #f3e5f5;
+    }
+
+    .card-purple::before {
+        background: #6a1b9a;
+    }
+
+    .stat-card .card-icon {
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .stat-card .card-label {
+        font-size: 11px;
+        color: #546e7a;
+        font-weight: 500;
+    }
+
+    .stat-card .card-value {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1a1a2e;
+        white-space: nowrap;
+    }
+
+    .stat-card .card-sub {
+        font-size: 10px;
+        color: #78909c;
+    }
+
+    /* ── Divider ── */
+    .stats-divider {
+        width: 1px;
+        background: #cfd8dc;
+        margin: 0 4px;
+        border-radius: 2px;
+        align-self: stretch;
+    }
+
+    /* ── Driver row ── */
+    .driver-stats {
+        display: flex;
+        gap: 10px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+
+    .driver-chip {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .chip-assigned {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #a5d6a7;
+    }
+
+    .chip-unassigned {
+        background: #fce4ec;
+        color: #c62828;
+        border: 1px solid #ef9a9a;
+    }
+
+    .chip-count {
+        background: #e3f2fd;
+        color: #1565c0;
+        border: 1px solid #90caf9;
+    }
+</style>
+
+<!-- Date Range Filter -->
+<div style="direction: rtl; margin-bottom: 16px; font-family: 'Segoe UI', Tahoma, Arial, sans-serif;">
+    <form method="get" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+                               padding: 12px 16px; border-radius: 8px;
+                               background: linear-gradient(135deg, #1a1a2e, #16213e);
+                               box-shadow: 0 1px 4px rgba(0,0,0,0.2);">
+        {% for key, value in request.GET.items %}
+            {% if key != "date_from" and key != "date_to" %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+        {% endfor %}
+        <span style="font-size: 13px; font-weight: 600; color: #90caf9;">📅 فلترة بالتاريخ:</span>
+        <label style="font-size: 12px; color: #b0bec5;">من</label>
+        <input type="date" name="date_from" value="{{ date_from|default:'' }}"
+               style="padding: 5px 8px; border: 1px solid #37474f; border-radius: 5px;
+                      background: #0d1117; color: #e0e0e0; font-size: 13px;">
+        <label style="font-size: 12px; color: #b0bec5;">إلى</label>
+        <input type="date" name="date_to" value="{{ date_to|default:'' }}"
+               style="padding: 5px 8px; border: 1px solid #37474f; border-radius: 5px;
+                      background: #0d1117; color: #e0e0e0; font-size: 13px;">
+        <button type="submit"
+                style="padding: 5px 16px; border: none; border-radius: 5px;
+                       background: #1a8754; color: white; cursor: pointer; font-size: 13px; font-weight: 600;">
+            تطبيق
+        </button>
+        {% if date_from or date_to %}
+        <a href="?" style="padding: 5px 12px; border: 1px solid #555; border-radius: 5px;
+                  text-decoration: none; color: #ef5350; font-size: 12px;">مسح</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if totals_summary %}
+<div class="stats-dashboard">
+
+    <!-- عنوان -->
+    <div class="stats-section-title">📊 ملخص مالي — {{ totals_summary.delivered_count }} طلب مكتمل من أصل {{ totals_summary.orders_count }} طلب</div>
+
+    <!-- الكروت المالية -->
+    <div class="stats-cards">
+
+        <div class="stat-card card-blue">
+            <span class="card-icon">💳</span>
+            <span class="card-label">إجمالي ما دفعه الزبون</span>
+            <span class="card-value">{{ totals_summary.total_sum }} ل.س</span>
+            <span class="card-sub">شامل التوصيل والخصومات</span>
+        </div>
+
+        <div class="stats-divider"></div>
+
+        <div class="stat-card card-orange">
+            <span class="card-icon">🏪</span>
+            <span class="card-label">مستحقات المطاعم</span>
+            <span class="card-value">{{ totals_summary.restaurant_total_sum }} ل.س</span>
+            <span class="card-sub">من سعر المنتجات فقط، بعد خصم نسبة التطبيق</span>
+        </div>
+
+        <div class="stats-divider"></div>
+
+        <div class="stat-card card-teal">
+            <span class="card-icon">🚚</span>
+            <span class="card-label">رسوم التوصيل</span>
+            <span class="card-value">{{ totals_summary.delivery_fee_sum }} ل.س</span>
+            <span class="card-sub">إجمالي رسوم التوصيل</span>
+        </div>
+
+        <div class="stats-divider"></div>
+
+        <div class="stat-card card-green">
+            <span class="card-icon">📈</span>
+            <span class="card-label">صافي ربح التطبيق</span>
+            <span class="card-value">{{ totals_summary.app_revenue }} ل.س</span>
+            <span class="card-sub">نسبة التطبيق من المنتجات + رسوم التوصيل</span>
+        </div>
+
+        {% if totals_summary.coupon_discount_sum and totals_summary.coupon_discount_sum != "0" %}
+        <div class="stats-divider"></div>
+
+        <div class="stat-card card-red">
+            <span class="card-icon">🎟️</span>
+            <span class="card-label">خصم الكوبونات</span>
+            <span class="card-value">{{ totals_summary.coupon_discount_sum }} ل.س</span>
+            <span class="card-sub">خصم تتحمله الشركة</span>
+        </div>
+        {% endif %}
+
+        {% if totals_summary.discount_sum and totals_summary.discount_sum != "0" %}
+        <div class="stats-divider"></div>
+
+        <div class="stat-card card-purple">
+            <span class="card-icon">🏷️</span>
+            <span class="card-label">إجمالي الخصومات</span>
+            <span class="card-value">{{ totals_summary.discount_sum }} ل.س</span>
+            <span class="card-sub">كوبونات + عروض المطاعم</span>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- إحصاءات السائقين -->
+    <div class="driver-stats" style="margin-top: 10px;">
+        <span style="font-size:11px; color:#78909c; align-self:center;">🚗 السائقون:</span>
+        <span class="driver-chip chip-count">📦 {{ totals_summary.orders_count }} طلب</span>
+        <span class="driver-chip chip-assigned">✅ {{ totals_summary.with_driver }} مسند</span>
+        {% if totals_summary.without_driver > 0 %}
+        <span class="driver-chip chip-unassigned">⚠️ {{ totals_summary.without_driver }} بانتظار سائق</span>
+        {% endif %}
+    </div>
+
+</div>
+{% endif %}
+
+{{ block.super }}
+{% endblock %}

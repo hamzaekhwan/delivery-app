@@ -1,0 +1,149 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<style>
+    .stats-dashboard {
+        direction: rtl;
+        margin-bottom: 16px;
+        font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    }
+
+    .stats-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: #78909c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .stats-cards {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        flex: 1;
+        min-width: 150px;
+        max-width: 240px;
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 4px;
+        height: 100%;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .card-blue   { background: #e3f2fd; }
+    .card-blue::before { background: #1565c0; }
+    .card-green  { background: #e8f5e9; }
+    .card-green::before { background: #2e7d32; }
+    .card-orange { background: #fff3e0; }
+    .card-orange::before { background: #e65100; }
+
+    .stat-card .card-icon  { font-size: 18px; line-height: 1; }
+    .stat-card .card-label { font-size: 11px; color: #546e7a; font-weight: 500; }
+    .stat-card .card-value { font-size: 20px; font-weight: 700; color: #1a1a2e; white-space: nowrap; }
+    .stat-card .card-sub   { font-size: 10px; color: #78909c; }
+
+    .stats-divider {
+        width: 1px;
+        background: #cfd8dc;
+        margin: 0 4px;
+        border-radius: 2px;
+        align-self: stretch;
+    }
+</style>
+
+<!-- Date Range Filter -->
+<div style="direction: rtl; margin-bottom: 16px; font-family: 'Segoe UI', Tahoma, Arial, sans-serif;">
+    <form method="get" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+                               padding: 12px 16px; border-radius: 8px;
+                               background: linear-gradient(135deg, #1a1a2e, #16213e);
+                               box-shadow: 0 1px 4px rgba(0,0,0,0.2);">
+        {% for key, value in request.GET.items %}
+            {% if key != "date_from" and key != "date_to" %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+        {% endfor %}
+
+        <span style="font-size: 13px; font-weight: 600; color: #90caf9;">📅 فلترة بالتاريخ:</span>
+
+        <label style="font-size: 12px; color: #b0bec5;">من</label>
+        <input type="date" name="date_from" value="{{ date_from|default:'' }}"
+               style="padding: 5px 8px; border: 1px solid #37474f; border-radius: 5px;
+                      background: #0d1117; color: #e0e0e0; font-size: 13px;">
+
+        <label style="font-size: 12px; color: #b0bec5;">إلى</label>
+        <input type="date" name="date_to" value="{{ date_to|default:'' }}"
+               style="padding: 5px 8px; border: 1px solid #37474f; border-radius: 5px;
+                      background: #0d1117; color: #e0e0e0; font-size: 13px;">
+
+        <button type="submit"
+                style="padding: 5px 16px; border: none; border-radius: 5px;
+                       background: #1a8754; color: white; cursor: pointer; font-size: 13px;
+                       font-weight: 600;">
+            تطبيق
+        </button>
+
+        {% if date_from or date_to %}
+        <a href="?"
+           style="padding: 5px 12px; border: 1px solid #555; border-radius: 5px;
+                  text-decoration: none; color: #ef5350; font-size: 12px;">
+            مسح
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+{% if session_stats %}
+<div class="stats-dashboard">
+    <div class="stats-section-title">⏱ إحصاءات جلسات السائقين — {{ session_stats.total_sessions }} جلسة</div>
+    <div class="stats-cards">
+
+        <div class="stat-card card-blue">
+            <span class="card-icon">⏳</span>
+            <span class="card-label">مجموع ساعات العمل</span>
+            <span class="card-value">{{ session_stats.hours }} سا {{ session_stats.minutes }} د</span>
+            <span class="card-sub">إجمالي وقت العمل للجلسات المعروضة</span>
+        </div>
+
+        <div class="stats-divider"></div>
+
+        <div class="stat-card card-green">
+            <span class="card-icon">📋</span>
+            <span class="card-label">عدد الجلسات</span>
+            <span class="card-value">{{ session_stats.total_sessions }}</span>
+            <span class="card-sub">إجمالي الجلسات المعروضة</span>
+        </div>
+
+        {% if session_stats.active_sessions > 0 %}
+        <div class="stats-divider"></div>
+
+        <div class="stat-card card-orange">
+            <span class="card-icon">🟢</span>
+            <span class="card-label">جلسات نشطة الآن</span>
+            <span class="card-value">{{ session_stats.active_sessions }}</span>
+            <span class="card-sub">وقتها محسوب ضمن المجموع</span>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endif %}
+
+{{ block.super }}
+{% endblock %}

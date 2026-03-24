@@ -1,0 +1,12 @@
+git pull origin develop
+git add .
+git commit -m "وصف التعديل"
+git push origin develop
+
+--- رفع على السيرفر ---
+git checkout release/0.1.0
+git pull origin release/0.1.0
+git commit -m "merge with develop"
+git merge develop
+git push origin release/0.1.0
+git checkout develop

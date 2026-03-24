@@ -1,0 +1,548 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}استيراد / تصدير المنتجات{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    :root {
+        --primary: #1a1a2e;
+        --accent: #e94560;
+        --accent-hover: #c73650;
+        --surface: #16213e;
+        --surface-light: #1a2744;
+        --text: #eee;
+        --text-muted: #8892a4;
+        --success: #00c853;
+        --warning: #ffc107;
+        --border: #2a3a5c;
+        --radius: 10px;
+    }
+
+    #content {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+
+    .import-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 35px;
+        margin-bottom: 25px;
+    }
+
+    .import-card h2 {
+        color: var(--accent);
+        font-size: 22px;
+        margin: 0 0 25px 0;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .import-card.export-card h2 {
+        color: var(--success);
+    }
+
+    .form-group {
+        margin-bottom: 22px;
+    }
+
+    .form-group label {
+        display: block;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .form-group label .required {
+        color: var(--accent);
+        margin-right: 3px;
+    }
+
+    .form-group select,
+    .form-group input[type="file"] {
+        width: 100%;
+        padding: 12px 15px;
+        background: var(--primary);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+    .form-group select:focus,
+    .form-group input[type="file"]:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .form-group select option {
+        background: var(--primary);
+        color: var(--text);
+    }
+
+    .form-group .help-text {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-top: 6px;
+        line-height: 1.7;
+    }
+
+    .help-text .highlight {
+        color: var(--warning);
+        font-weight: 600;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        background: var(--primary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+    }
+
+    .checkbox-group label {
+        margin: 0;
+        font-weight: normal;
+    }
+
+    .btn-import {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 35px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-import:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+    }
+
+    .btn-import:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-export {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 35px;
+        background: var(--success);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-export:hover {
+        background: #00a846;
+        transform: translateY(-1px);
+    }
+
+    .btn-import .spinner {
+        display: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+    }
+
+    .btn-import.loading .spinner {
+        display: inline-block;
+    }
+
+    .btn-import.loading .btn-text {
+        display: none;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Results */
+    .results-card {
+        display: none;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 35px;
+        margin-top: 25px;
+    }
+
+    .results-card.show {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .results-card h3 {
+        color: var(--success);
+        font-size: 18px;
+        margin: 0 0 20px 0;
+    }
+
+    .results-card.error h3 {
+        color: var(--accent);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .stat-item {
+        background: var(--primary);
+        padding: 15px;
+        border-radius: 8px;
+        border-right: 3px solid var(--accent);
+    }
+
+    .stat-item .stat-label {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .stat-item .stat-value {
+        color: var(--text);
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .stat-item.created {
+        border-right-color: var(--success);
+    }
+
+    .stat-item.updated {
+        border-right-color: var(--warning);
+    }
+
+    .stat-item.skipped {
+        border-right-color: var(--text-muted);
+    }
+
+    .errors-list {
+        max-height: 300px;
+        overflow-y: auto;
+        background: var(--primary);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+
+    .errors-list p {
+        color: var(--accent);
+        font-size: 13px;
+        margin: 5px 0;
+        padding: 5px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .errors-list p:last-child {
+        border-bottom: none;
+    }
+
+    .file-info {
+        display: none;
+        background: var(--primary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 15px;
+        margin-top: 10px;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .file-info.show {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Restaurant detected badge */
+    .restaurant-detected {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        background: var(--primary);
+        border: 1px solid var(--success);
+        border-radius: 8px;
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--success);
+    }
+
+    .restaurant-detected.show {
+        display: flex;
+    }
+
+    .restaurant-detected.error {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div dir="rtl">
+
+    <!-- ====== EXPORT CARD ====== -->
+    <div class="import-card export-card">
+        <h2>📤 تصدير المنتجات إلى Excel</h2>
+
+        <div class="form-group">
+            <label>اختر المطعم للتصدير</label>
+            <select id="exportRestaurantSelect">
+                <option value="">-- اختر المطعم --</option>
+                {% for restaurant in restaurants %}
+                <option value="{{ restaurant.id }}">
+                    {{ restaurant.name }}{% if restaurant.name_en %} ({{ restaurant.name_en }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="help-text">
+                سيتم تحميل الملف باسم: <span class="highlight">اسم_المطعم_products.xlsx</span>
+                <br>لا تغير اسم الملف لأنه يُستخدم للتعرف على المطعم عند الاستيراد
+            </div>
+        </div>
+
+        <button class="btn-export" onclick="exportProducts()">
+            📥 تصدير Excel
+        </button>
+    </div>
+
+    <!-- ====== IMPORT CARD ====== -->
+    <div class="import-card">
+        <h2>📦 استيراد منتجات من ملف Excel</h2>
+
+        <form id="importForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>
+                    <span class="required">*</span>
+                    ملف المنتجات (xlsx)
+                </label>
+                <input type="file" name="file" id="fileInput" accept=".xlsx,.xls" required>
+                <div class="help-text">
+                    الأعمدة المطلوبة: id, name-en, name-ar, price, description-en, description-ar, sub category-en, sub
+                    category - ar
+                    <br>⚠️ <span class="highlight">لا تغير اسم الملف</span> — سيتم التعرف على المطعم تلقائياً منه
+                </div>
+
+                <!-- اسم الملف -->
+                <div class="file-info" id="fileInfo">
+                    <span>📄</span>
+                    <span id="fileName"></span>
+                </div>
+
+                <!-- المطعم المكتشف -->
+                <div class="restaurant-detected" id="restaurantDetected">
+                    <span id="restaurantDetectedIcon">✅</span>
+                    <span id="restaurantDetectedText"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" name="update_existing" id="updateExisting" checked>
+                    <label for="updateExisting">تحديث المنتجات الموجودة مسبقاً (السعر والوصف والاسم)</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" name="dry_run" id="dryRun">
+                    <label for="dryRun">معاينة فقط (بدون حفظ)</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-import" id="submitBtn">
+                <span class="spinner"></span>
+                <span class="btn-text">🚀 بدء الاستيراد</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- ====== RESULTS ====== -->
+    <div class="results-card" id="resultsCard">
+        <h3 id="resultsTitle"></h3>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="errors-list" id="errorsList" style="display:none;"></div>
+    </div>
+
+</div>
+
+<script>
+    // ── Export ──
+    function exportProducts() {
+        const restaurantId = document.getElementById('exportRestaurantSelect').value;
+        if (!restaurantId) {
+            alert('اختر مطعماً أولاً');
+            return;
+        }
+        window.location.href = `/admin-export/export-products/?restaurant_id=${restaurantId}`;
+    }
+
+    // ── File input: اكتشاف اسم المطعم من اسم الملف ──
+    document.getElementById('fileInput').addEventListener('change', function () {
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const restaurantDetected = document.getElementById('restaurantDetected');
+        const restaurantDetectedText = document.getElementById('restaurantDetectedText');
+        const restaurantDetectedIcon = document.getElementById('restaurantDetectedIcon');
+
+        if (this.files.length > 0) {
+            const file = this.files[0];
+            fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            fileInfo.classList.add('show');
+
+            // استخرج اسم المطعم من اسم الملف
+            const match = file.name.match(/^(.+)_products\.(xlsx|xls)$/i);
+            if (match) {
+                const detectedName = match[1];
+                restaurantDetected.className = 'restaurant-detected show';
+                restaurantDetectedIcon.textContent = '✅';
+                restaurantDetectedText.textContent = `سيتم الاستيراد للمطعم: ${detectedName}`;
+            } else {
+                restaurantDetected.className = 'restaurant-detected show error';
+                restaurantDetectedIcon.textContent = '❌';
+                restaurantDetectedText.textContent = 'اسم الملف غير صحيح — يجب أن يكون: اسم_المطعم_products.xlsx';
+            }
+        } else {
+            fileInfo.classList.remove('show');
+            restaurantDetected.className = 'restaurant-detected';
+        }
+    });
+
+    // ── Import submit ──
+    document.getElementById('importForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const btn = document.getElementById('submitBtn');
+        const resultsCard = document.getElementById('resultsCard');
+
+        btn.classList.add('loading');
+        btn.disabled = true;
+        resultsCard.classList.remove('show');
+
+        const formData = new FormData(this);
+
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+            },
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+
+                const title = document.getElementById('resultsTitle');
+                const statsGrid = document.getElementById('statsGrid');
+                const errorsList = document.getElementById('errorsList');
+
+                if (data.success) {
+                    resultsCard.classList.remove('error');
+                    title.textContent = data.dry_run ? '📋 نتائج المعاينة' : '✅ تم الاستيراد بنجاح!';
+                    title.style.color = 'var(--success)';
+
+                    statsGrid.innerHTML = `
+                    <div class="stat-item created">
+                        <div class="stat-label">منتجات أُضيفت</div>
+                        <div class="stat-value">${data.stats.products_created}</div>
+                    </div>
+                    <div class="stat-item updated">
+                        <div class="stat-label">منتجات حُدّثت</div>
+                        <div class="stat-value">${data.stats.products_updated}</div>
+                    </div>
+                    <div class="stat-item skipped">
+                        <div class="stat-label">منتجات تُخطّيت</div>
+                        <div class="stat-value">${data.stats.products_skipped}</div>
+                    </div>
+                    <div class="stat-item created">
+                        <div class="stat-label">تصنيفات أُنشئت</div>
+                        <div class="stat-value">${data.stats.categories_created}</div>
+                    </div>
+                    <div class="stat-item created">
+                        <div class="stat-label">تصنيفات فرعية أُنشئت</div>
+                        <div class="stat-value">${data.stats.subcategories_created}</div>
+                    </div>
+                    <div class="stat-item updated">
+                        <div class="stat-label">أسعار مقسّمة (صغير/كبير)</div>
+                        <div class="stat-value">${data.stats.price_ranges_split}</div>
+                    </div>
+                `;
+
+                    if (data.errors && data.errors.length > 0) {
+                        errorsList.style.display = 'block';
+                        errorsList.innerHTML = '<p style="color: var(--warning); font-weight: 600;">⚠️ تحذيرات:</p>' +
+                            data.errors.map(e => `<p>⚠️ ${e}</p>`).join('');
+                    } else {
+                        errorsList.style.display = 'none';
+                    }
+                } else {
+                    resultsCard.classList.add('error');
+                    title.textContent = '❌ حدث خطأ';
+                    title.style.color = 'var(--accent)';
+                    statsGrid.innerHTML = '';
+                    errorsList.style.display = 'block';
+                    errorsList.innerHTML = `<p>${data.error}</p>`;
+                }
+
+                resultsCard.classList.add('show');
+            })
+            .catch(err => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                alert('خطأ في الاتصال: ' + err.message);
+            });
+    });
+</script>
+{% endblock %}

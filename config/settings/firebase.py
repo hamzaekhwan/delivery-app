@@ -1,0 +1,7 @@
+import os
+
+from config.env import BASE_DIR, env
+
+
+FIREBASE_CREDENTIALS_USER = env("FIREBASE_CREDENTIALS_USER", default="")
+FIREBASE_CREDENTIALS_DRIVER = env("FIREBASE_CREDENTIALS_DRIVER", default="")

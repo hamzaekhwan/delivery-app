@@ -1,0 +1,93 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server /etc/redis/redis.conf
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf:ro
+    expose:
+      - "6379"
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.django.production
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - staticfiles:/app/staticfiles
+      - media:/app/media
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  celery-worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.django.production
+    command: celery -A config worker -l info --concurrency=4
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.django.production
+    command: celery -A config beat -l info
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: ./caddy
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - staticfiles:/app/staticfiles:ro
+      - media:/app/media:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  staticfiles:
+  media:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
